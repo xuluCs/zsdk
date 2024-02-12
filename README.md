@@ -1,5 +1,8 @@
 # zsdk
 
+## What is this fork for?
+The porpouse is to add bluetooth printing to the already available TCP/IP printing.
+
 ### Zebra Link OS SDK Flutter plugin.
 This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://www.zebra.com/ap/en/support-downloads/printer-software/link-os-multiplatform-sdk.html)
 
