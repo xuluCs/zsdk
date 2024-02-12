@@ -1,27 +1,35 @@
 # zsdk
 
 ## What is this fork for?
-The porpouse is to add bluetooth printing to the already available TCP/IP printing.
+The porpoise is to add bluetooth printing to the already available TCP/IP printing.
 
 ### Zebra Link OS SDK Flutter plugin.
 This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://www.zebra.com/ap/en/support-downloads/printer-software/link-os-multiplatform-sdk.html)
 
 ### Features
-| Feature                   | iOS                     | Android                 |
-|---------------------------|-------------------------|-------------------------|
-| Print ZPL from String     | :white_check_mark:      | :white_check_mark:      |
-| Print ZPL from file       | :white_check_mark:      | :white_check_mark:      |
-| Print PDF from byte array | :ballot_box_with_check: | :ballot_box_with_check: |
-| Print PDF from file       | :white_check_mark:      | :white_check_mark:      |
-| Get printer settings      | :white_check_mark:      | :white_check_mark:      |
-| Set printer settings      | :white_check_mark:      | :white_check_mark:      |
-| Check printer status      | :white_check_mark:      | :white_check_mark:      |
-| Print configuration label | :white_check_mark:      | :white_check_mark:      |
-| Run calibration           | :white_check_mark:      | :white_check_mark:      |
-| Reboot printer            | :white_check_mark:      | :white_check_mark:      |
+| Feature                                  | iOS                     | Android                 |
+|------------------------------------------|-------------------------|-------------------------|
+| Print ZPL from String over TCP/IP        | :white_check_mark:      | :white_check_mark:      |
+| Print ZPL from file over TCP/IP          | :white_check_mark:      | :white_check_mark:      |
+| Print PDF from byte array over TCP/IP    | :ballot_box_with_check: | :ballot_box_with_check: |
+| Print PDF from file over TCP/IP          | :white_check_mark:      | :white_check_mark:      |
+| Get printer settings over TCP/IP         | :white_check_mark:      | :white_check_mark:      |
+| Set printer settings over TCP/IP         | :white_check_mark:      | :white_check_mark:      |
+| Check printer status over TCP/IP         | :white_check_mark:      | :white_check_mark:      |
+| Print configuration label over TCP/IP    | :white_check_mark:      | :white_check_mark:      |
+| Run calibration over TCP/IP              | :white_check_mark:      | :white_check_mark:      |
+| Reboot printer over TCP/IP               | :white_check_mark:      | :white_check_mark:      |
+| Print ZPL from String over Bluetooth     |                         |                         |
+| Print ZPL from file over Bluetooth       |                         |                         |
+| Print PDF from byte array over Bluetooth |                         |                         |
+| Print PDF from file over Bluetooth       |                         |                         |
+| Get printer settings over Bluetooth      |                         |                         |
+| Set printer settings over Bluetooth      |                         |                         |
+| Check printer status over Bluetooth      |                         |                         |
+| Print configuration label over Bluetooth |                         |                         |
+| Run calibration over Bluetooth           |                         |                         |
+| Reboot printer over Bluetooth            |                         |                         |
 
-
-**Currently this plugin only supports TCP/IP connection to the Printer.** 
 
 ### Note:
 Since v3.1.0+1 the plugin supports PDF direct printing on both iOS and Android, before this version, the PDF printing was only available on Android, and it was by using some kind of workaround converting the PDF to image and printing it as image, which was not reliable and caused some issues depending on the document dimensions, etc.
@@ -42,7 +50,7 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 ```
-
+ 
 ### Android Setup
 No setup required
 
