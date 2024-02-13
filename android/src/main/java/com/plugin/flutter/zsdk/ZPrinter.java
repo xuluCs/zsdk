@@ -4,6 +4,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
+import androidx.core.util.Consumer;
+
+import com.zebra.sdk.btleComm.BluetoothLeDiscoverer;
 import com.zebra.sdk.comm.Connection;
 import com.zebra.sdk.comm.ConnectionException;
 import com.zebra.sdk.comm.TcpConnection;
@@ -13,7 +16,12 @@ import com.zebra.sdk.printer.SGD;
 import com.zebra.sdk.printer.ZebraPrinter;
 import com.zebra.sdk.printer.ZebraPrinterFactory;
 import com.zebra.sdk.printer.ZebraPrinterLinkOs;
+import com.zebra.sdk.printer.discovery.BluetoothDiscoverer;
+import com.zebra.sdk.printer.discovery.DiscoveredPrinter;
+import com.zebra.sdk.printer.discovery.DiscoveryHandler;
 import com.zebra.sdk.util.internal.FileUtilities;
+
+import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -21,11 +29,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
+
+// Define a functional interface with a single abstract method
 
 /**
  * Created by luis901101 on 2019-12-18.
@@ -77,8 +89,7 @@ public class ZPrinter
 
     private void onException(Exception e, ZebraPrinter printer){
         if(e != null) e.printStackTrace();
-        PrinterResponse response = new PrinterResponse(ErrorCode.EXCEPTION,
-                getStatusInfo(printer), "Unknown exception. "+e);
+        PrinterResponse response = new PrinterResponse(ErrorCode.EXCEPTION, getStatusInfo(printer), "Unknown exception. "+e);
         handler.post(() -> result.error(response.errorCode.name(), response.message, response.toMap()));
     }
 
@@ -527,5 +538,68 @@ public class ZPrinter
         }
 
         return scale;
+    }
+
+    protected void findPrintersOverBluetooth(final Context context, final MethodChannel methodChannel) {
+
+        Thread findPrinters = new Thread(() -> {
+            try {
+                System.out.println("BluetoothLeDiscoverer: started");
+                BluetoothLeDiscoverer.findPrinters(context, new DiscoveryHandler() {
+                    @Override
+                    public void foundPrinter(DiscoveredPrinter discoveredPrinter) {
+                        System.out.println("BluetoothLeDiscoverer: Found printer " + discoveredPrinter.address);
+                        handler.post(() -> bluetoothPrinterFound(discoveredPrinter, true));
+                    }
+
+                    @Override
+                    public void discoveryFinished() {
+                        System.out.println("BluetoothLeDiscoverer: discovery finished");
+                        handler.post(() -> result.success(null));
+                    }
+
+                    @Override
+                    public void discoveryError(String s) {
+                        PrinterResponse response = new PrinterResponse(ErrorCode.PRINTER_ERROR, null, s);
+                        handler.post(() -> result.error(ErrorCode.PRINTER_ERROR.toString(), s, response.toMap()));
+                    }
+                });
+
+                System.out.println("BluetoothDiscoverer: started");
+                BluetoothDiscoverer.findPrinters(context, new DiscoveryHandler() {
+                    @Override
+                    public void foundPrinter(DiscoveredPrinter discoveredPrinter) {
+                        System.out.println("BluetoothDiscoverer: Found printer " + discoveredPrinter.address);
+                        handler.post(() -> bluetoothPrinterFound(discoveredPrinter, false));
+                    }
+
+                    @Override
+                    public void discoveryFinished() {
+                        System.out.println("BluetoothDiscoverer: discovery finished");
+                        handler.post(() -> result.success(null));
+                    }
+
+                    @Override
+                    public void discoveryError(String s) {
+                        PrinterResponse response = new PrinterResponse(ErrorCode.PRINTER_ERROR, null, s);
+                        handler.post(() -> result.error(ErrorCode.PRINTER_ERROR.toString(), s, response.toMap()));
+                    }
+                });
+
+            } catch (ConnectionException e) {
+                onConnectionTimeOut(e);
+            }
+        });
+
+        findPrinters.start();
+    }
+
+    private void bluetoothPrinterFound(DiscoveredPrinter printer, Boolean isLowEnergy) {
+        HashMap<String, String> args = new HashMap<>();
+        args.put("address", printer.address);
+        args.put("friendlyName", printer.getDiscoveryDataMap().get("FRIENDLY_NAME"));
+        args.put("isLowEnergy", isLowEnergy.toString());
+
+        channel.invokeMethod("bluetoothPrinterFound", (new JSONObject(args)).toString());
     }
 }
