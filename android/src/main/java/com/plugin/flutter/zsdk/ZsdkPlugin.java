@@ -4,6 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+
+import com.zebra.sdk.comm.BluetoothConnection;
+import com.zebra.sdk.comm.TcpConnection;
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
@@ -63,6 +67,7 @@ public class ZsdkPlugin implements FlutterPlugin, MethodCallHandler {
   static final String _DO_MANUAL_CALIBRATION_OVER_BLUETOOTH = "doManualCalibrationOverBluetooth";
   static final String _PRINT_CONFIGURATION_LABEL_OVER_BLUETOOTH = "printConfigurationLabelOverBluetooth";
   static final String _REBOOT_PRINTER_OVER_BLUETOOTH = "rebootPrinterOverBluetooth";
+  static final String _FIND_PRINTERS_OVER_BLUETOOTH = "findPrintersOverBluetooth";
 
   /** Properties */
   static final String _filePath = "filePath";
@@ -90,134 +95,145 @@ public class ZsdkPlugin implements FlutterPlugin, MethodCallHandler {
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    try
-    {
-      ZPrinter printer = new ZPrinter(
-          context,
-          channel,
-          result,
-          new PrinterConf(
-              call.argument(_cmWidth),
-              call.argument(_cmHeight),
-              call.argument(_dpi),
-              Orientation.getValueOfName(call.argument(_orientation))
-          )
-      );
-      switch(call.method){
-        case _DO_MANUAL_CALIBRATION_OVER_TCP_IP:
-          printer.doManualCalibrationOverTCPIP(
-              call.argument(_address),
-              call.argument(_port)
+      try {
+          ZPrinter printer = new ZPrinter(
+              context,
+              channel,
+              result,
+              new PrinterConf(
+                  call.argument(_cmWidth),
+                  call.argument(_cmHeight),
+                  call.argument(_dpi),
+                  Orientation.getValueOfName(call.argument(_orientation))
+              )
           );
-          break;
-        case _PRINT_CONFIGURATION_LABEL_OVER_TCP_IP:
-          printer.printConfigurationLabelOverTCPIP(
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _CHECK_PRINTER_STATUS_OVER_TCP_IP:
-          printer.checkPrinterStatusOverTCPIP(
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _GET_PRINTER_SETTINGS_OVER_TCP_IP:
-          printer.getPrinterSettingsOverTCPIP(
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _SET_PRINTER_SETTINGS_OVER_TCP_IP:
-          printer.setPrinterSettingsOverTCPIP(
-              call.argument(_address),
-              call.argument(_port),
-              new PrinterSettings(call.arguments())
-          );
-          break;
-        case _PRINT_PDF_FILE_OVER_TCP_IP:
-          printer.printPdfFileOverTCPIP(
-              call.argument(_filePath),
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _PRINT_ZPL_FILE_OVER_TCP_IP:
-          printer.printZplFileOverTCPIP(
-              call.argument(_filePath),
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _PRINT_ZPL_DATA_OVER_TCP_IP:
-          printer.printZplDataOverTCPIP(
-              call.argument(_data),
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _REBOOT_PRINTER_OVER_TCP_IP:
-          printer.rebootPrinter(
-              call.argument(_address),
-              call.argument(_port)
-          );
-          break;
-        case _DO_MANUAL_CALIBRATION_OVER_BLUETOOTH:
-          printer.doManualCalibrationOverBluetooth(
-              call.argument(_address)
-          );
-          break;
-        case _PRINT_CONFIGURATION_LABEL_OVER_BLUETOOTH:
-          printer.printConfigurationLabelOverBluetooth(
-              call.argument(_address)
-          );
-          break;
-        case _CHECK_PRINTER_STATUS_OVER_BLUETOOTH:
-          printer.checkPrinterStatusOverBluetooth(
-              call.argument(_address)
-          );
-          break;
-        case _GET_PRINTER_SETTINGS_OVER_BLUETOOTH:
-          printer.getPrinterSettingsOverBluetooth(
-              call.argument(_address)
-          );
-          break;
-        case _SET_PRINTER_SETTINGS_OVER_BLUETOOTH:
-          printer.setPrinterSettingsOverBluetooth(
-              call.argument(_address),
-              new PrinterSettings(call.arguments())
-          );
-          break;
-        case _PRINT_PDF_FILE_OVER_BLUETOOTH:
-          printer.printPdfFileOverBluetooth(
-              call.argument(_filePath),
-              call.argument(_address)
-          );
-          break;
-        case _PRINT_ZPL_FILE_OVER_BLUETOOTH:
-          printer.printZplFileOverBluetooth(
-              call.argument(_filePath),
-              call.argument(_address)
-          );
-          break;
-        case _PRINT_ZPL_DATA_OVER_BLUETOOTH:
-          printer.printZplDataOverBluetooth(
-              call.argument(_data),
-              call.argument(_address)
-          );
-          break;
-        case _REBOOT_PRINTER_OVER_BLUETOOTH:
-          printer.rebootPrinterOverBluetooth(call.argument(_address));
-          break;
-        case _PRINT_PDF_DATA_OVER_TCP_IP:
-        default:
-          result.notImplemented();
+          switch (call.method) {
+              case _DO_MANUAL_CALIBRATION_OVER_TCP_IP:
+                  printer.doManualCalibration(
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _PRINT_CONFIGURATION_LABEL_OVER_TCP_IP:
+                  printer.printConfigurationLabel(
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _CHECK_PRINTER_STATUS_OVER_TCP_IP:
+                  printer.checkPrinterStatus(
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _GET_PRINTER_SETTINGS_OVER_TCP_IP:
+                  printer.getPrinterSettings(
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _SET_PRINTER_SETTINGS_OVER_TCP_IP:
+                  printer.setPrinterSettings(
+                      newTcpConnection(call),
+                      new PrinterSettings(call.arguments())
+                  );
+                  break;
+              case _PRINT_PDF_FILE_OVER_TCP_IP:
+                  printer.printPdfFile(
+                      call.argument(_filePath),
+                          newTcpConnection(call)
+                  );
+                  break;
+              case _PRINT_ZPL_FILE_OVER_TCP_IP:
+                  printer.printZplFile(
+                      call.argument(_filePath),
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _PRINT_ZPL_DATA_OVER_TCP_IP:
+                  printer.printZplData(
+                      call.argument(_data),
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _REBOOT_PRINTER_OVER_TCP_IP:
+                  printer.rebootPrinter(
+                      newTcpConnection(call)
+                  );
+                  break;
+              case _DO_MANUAL_CALIBRATION_OVER_BLUETOOTH:
+                  printer.doManualCalibration(
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _PRINT_CONFIGURATION_LABEL_OVER_BLUETOOTH:
+                  printer.printConfigurationLabel(
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _CHECK_PRINTER_STATUS_OVER_BLUETOOTH:
+                  printer.checkPrinterStatus(
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _GET_PRINTER_SETTINGS_OVER_BLUETOOTH:
+                  printer.getPrinterSettings(
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _SET_PRINTER_SETTINGS_OVER_BLUETOOTH:
+                  printer.setPrinterSettings(
+                      newBluetoothConnection(call),
+                      new PrinterSettings(call.arguments())
+                  );
+                  break;
+              case _PRINT_PDF_FILE_OVER_BLUETOOTH:
+                  printer.printPdfFile(
+                      call.argument(_filePath),
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _PRINT_ZPL_FILE_OVER_BLUETOOTH:
+                  printer.printZplFile(
+                      call.argument(_filePath),
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _PRINT_ZPL_DATA_OVER_BLUETOOTH:
+                  printer.printZplData(
+                      call.argument(_data),
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _REBOOT_PRINTER_OVER_BLUETOOTH:
+                  printer.rebootPrinter(
+                      newBluetoothConnection(call)
+                  );
+                  break;
+              case _FIND_PRINTERS_OVER_BLUETOOTH:
+                  printer.findPrintersOverBluetooth(
+                      context
+                  );
+                  break;
+              case _PRINT_PDF_DATA_OVER_TCP_IP:
+              default:
+                  result.notImplemented();
+          }
+      } catch (Exception e) {
+          e.printStackTrace();
+          result.error(ErrorCode.EXCEPTION.name(), e.getMessage(), null);
       }
-    }
-    catch(Exception e)
-    {
-      e.printStackTrace();
-      result.error(ErrorCode.EXCEPTION.name(), e.getMessage(), null);
-    }
   }
+
+    private TcpConnection newTcpConnection(@NonNull MethodCall call) {
+        String address = call.argument(_address);
+        Integer port = call.argument(_port);
+        int MAX_TIME_OUT_FOR_READ = 5000;
+        int TIME_TO_WAIT_FOR_MORE_DATA = 0;
+        int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
+
+        return new TcpConnection(address, tcpPort, MAX_TIME_OUT_FOR_READ, TIME_TO_WAIT_FOR_MORE_DATA);
+    }
+
+    public BluetoothConnection newBluetoothConnection(@NonNull MethodCall call) {
+        String address = call.argument(_address);
+
+        return new BluetoothConnection(address);
+    }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:zsdk/zsdk.dart' as Printer;
 import 'dart:io';
 
@@ -23,8 +24,6 @@ const String btnPrintConfigurationLabel = 'btnPrintConfigurationLabel';
 const String btnRebootPrinter = 'btnRebootPrinter';
 
 class MyApp extends StatefulWidget {
-  final Printer.ZSDK zsdk = Printer.ZSDK();
-
   MyApp({super.key});
 
   @override
@@ -39,7 +38,13 @@ enum OperationStatus {
   NONE,
 }
 
+enum ConnectionType {
+  BLUETOOTH,
+  TCP_IP,
+}
+
 class _MyAppState extends State<MyApp> {
+  late final Printer.ZSDK zsdk;
   final addressIpController = TextEditingController(text: "10.0.0.11");
   final addressPortController = TextEditingController();
   final pathController = TextEditingController();
@@ -81,9 +86,21 @@ class _MyAppState extends State<MyApp> {
   String? filePath;
   String? zplData;
 
+  ConnectionType connectionType = ConnectionType.TCP_IP;
+  List<Printer.BluetoothConnectionData> printers = [];
+  Printer.BluetoothConnectionData? selectedPrinter;
+  bool searchingForBluetoothPrinters = false;
+
   @override
   void initState() {
     super.initState();
+    zsdk = Printer.ZSDK(
+      onBluetoothPrinterFound: (Printer.BluetoothConnectionData printer) {
+        setState(() {
+          printers.add(printer);
+        });
+      },
+    );
   }
 
   String getName<T>(T value) {
@@ -256,15 +273,59 @@ class _MyAppState extends State<MyApp> {
                         'Printer address',
                         style: TextStyle(fontSize: 16),
                       ),
-                      TextField(
-                        controller: addressIpController,
-                        decoration: const InputDecoration(
-                            labelText: "Printer IP address"),
+                      DropdownMenu<ConnectionType>(
+                        initialSelection: connectionType,
+                        onSelected: (ConnectionType? value) async {
+                          if(value == ConnectionType.BLUETOOTH){
+                            PermissionStatus permissionRequestResult = await Permission.bluetooth.request();
+                            PermissionStatus permissionScanRequestResult = await Permission.bluetoothScan.request();
+                            PermissionStatus permissionConnectRequestResult = await Permission.bluetoothConnect.request();
+
+                            if(permissionRequestResult != PermissionStatus.granted || permissionScanRequestResult != PermissionStatus.granted || permissionConnectRequestResult != PermissionStatus.granted){
+                              showSnackBar("Bluetooth permission is necessary to use bluetooth printers");
+                              return;
+                            }
+                            setState(() {
+                              searchingForBluetoothPrinters = true;
+                            });
+                            zsdk.findPrintersOverBluetooth();
+                            Printer.BluetoothConnectionData printer = await showDialog(
+                              context: context,
+                              builder: bluetoothPrinterSelectionPopup,
+                            );
+                            setState(() {
+                              searchingForBluetoothPrinters = false;
+                              selectedPrinter = printer;
+                              connectionType = value!;
+                            });
+
+                            return;
+                          }
+
+                          setState(() {
+                            connectionType = value!;
+                          });
+                        },
+                        dropdownMenuEntries: ConnectionType.values.map<DropdownMenuEntry<ConnectionType>>((ConnectionType value) {
+                          return DropdownMenuEntry<ConnectionType>(value: value, label: value.name);
+                        }).toList(),
                       ),
-                      TextField(
-                        controller: addressPortController,
-                        decoration: const InputDecoration(
-                            labelText: "Printer port (defaults to 9100)"),
+                      Visibility(
+                        visible: connectionType == ConnectionType.TCP_IP,
+                        child: Column(
+                          children: <Widget>[
+                            TextField(
+                              controller: addressIpController,
+                              decoration: const InputDecoration(
+                                  labelText: "Printer IP address"),
+                            ),
+                            TextField(
+                              controller: addressPortController,
+                              decoration: const InputDecoration(
+                                  labelText: "Printer port (defaults to 9100)"),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(
                         height: 16,
@@ -950,8 +1011,7 @@ class _MyAppState extends State<MyApp> {
             calibrationMessage = "Starting manual callibration...";
             calibrationStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
-              .doManualCalibrationOverTCPIP(
+          zsdk.doManualCalibrationOverTCPIP(
             address: addressIpController.text,
             port: int.tryParse(addressPortController.text),
           )
@@ -989,7 +1049,7 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Getting printer settings...";
             settingsStatus = OperationStatus.RECEIVING;
           });
-          widget.zsdk
+          zsdk
               .getPrinterSettingsOverTCPIP(
             address: addressIpController.text,
             port: int.tryParse(addressPortController.text),
@@ -1029,7 +1089,7 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Setting printer settings...";
             settingsStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .setPrinterSettingsOverTCPIP(
                   address: addressIpController.text,
                   port: int.tryParse(addressPortController.text),
@@ -1124,7 +1184,7 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Setting default settings...";
             settingsStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .setPrinterSettingsOverTCPIP(
                   address: addressIpController.text,
                   port: int.tryParse(addressPortController.text),
@@ -1164,7 +1224,7 @@ class _MyAppState extends State<MyApp> {
             statusMessage = "Checking printer status...";
             checkingStatus = OperationStatus.RECEIVING;
           });
-          widget.zsdk
+          zsdk
               .checkPrinterStatusOverTCPIP(
             address: addressIpController.text,
             port: int.tryParse(addressPortController.text),
@@ -1207,7 +1267,7 @@ class _MyAppState extends State<MyApp> {
             statusMessage = "Rebooting printer...";
             rebootingStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .rebootPrinterOverTCPIP(
             address: addressIpController.text,
             port: int.tryParse(addressPortController.text),
@@ -1250,7 +1310,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .printConfigurationLabelOverTCPIP(
             address: addressIpController.text,
             port: int.tryParse(addressPortController.text),
@@ -1292,7 +1352,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .printPdfFileOverTCPIP(
                   filePath: pathController.text,
                   address: addressIpController.text,
@@ -1348,7 +1408,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .printZplDataOverTCPIP(
                   data: zplData!,
                   address: addressIpController.text,
@@ -1396,7 +1456,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          widget.zsdk
+          zsdk
               .printZplDataOverTCPIP(
                   data: zplData!,
                   address: addressIpController.text,
@@ -1445,5 +1505,51 @@ class _MyAppState extends State<MyApp> {
   void showSnackBar(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  AlertDialog bluetoothPrinterSelectionPopup(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        "Printers list",
+        style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 20,
+            fontWeight: FontWeight.bold
+        ),
+      ),
+      content: Container(
+        height: double.maxFinite,
+        width: double.maxFinite,
+        child: Column(
+          children: <Widget>[
+            Visibility(visible: searchingForBluetoothPrinters, child: const CircularProgressIndicator()),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(10),
+                itemCount: printers.length,
+                itemBuilder: (context, index) {
+                  final printer = printers[index];
+                  return ListTile(
+                    title: Text(printer.friendlyName),
+                    subtitle: Text(printer.macAddress),
+                    onTap: () {
+                      Navigator.of(context).pop(printer);
+                    },
+                  );
+                },
+              )
+            ),
+          ],
+        )
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: Text('Cancel'),
+          onPressed: () {
+            Navigator.of(context).pop(null);
+          },
+        ),
+      ],
+    );
   }
 }

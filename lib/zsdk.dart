@@ -26,6 +26,7 @@ export 'package:zsdk/src/enumerators/virtual_device.dart';
 export 'package:zsdk/src/enumerators/status.dart';
 export 'package:zsdk/src/status_info.dart';
 export 'package:zsdk/src/enumerators/zpl_mode.dart';
+export 'package:zsdk/src/bluetooth_connection_data.dart';
 
 class ZSDK {
   static const int DEFAULT_ZPL_TCP_PORT = 9100;
@@ -274,11 +275,7 @@ class ZSDK {
           timeout ??= const Duration(seconds: DEFAULT_CONNECTION_TIMEOUT),
           onTimeout: () => _onTimeout(timeout: timeout));
 
-  Future findPrintersOverBluetooth(
-          {required String address, Duration? timeout}) =>
-      _channel.invokeMethod(_FIND_PRINTERS_OVER_BLUETOOTH).timeout(
-          timeout ??= const Duration(seconds: DEFAULT_CONNECTION_TIMEOUT),
-          onTimeout: () => _onTimeout(timeout: timeout));
+  Future findPrintersOverBluetooth() => _channel.invokeMethod(_FIND_PRINTERS_OVER_BLUETOOTH);
 
   Future doManualCalibrationOverBluetooth(
           {required String address, Duration? timeout}) =>
@@ -327,9 +324,9 @@ class ZSDK {
       _channel
           .invokeMethod(
               _SET_PRINTER_SETTINGS_OVER_BLUETOOTH,
-              {
+              settings.toMap()..addAll({
                 _address: address,
-              }..addAll(settings.toMap()))
+              }))
           .timeout(
               timeout ??= const Duration(seconds: DEFAULT_CONNECTION_TIMEOUT),
               onTimeout: () => _onTimeout(timeout: timeout));

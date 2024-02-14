@@ -4,12 +4,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import androidx.core.util.Consumer;
-
 import com.zebra.sdk.btleComm.BluetoothLeDiscoverer;
 import com.zebra.sdk.comm.Connection;
 import com.zebra.sdk.comm.ConnectionException;
-import com.zebra.sdk.comm.TcpConnection;
 import com.zebra.sdk.graphics.internal.ZebraImageAndroid;
 import com.zebra.sdk.printer.PrinterStatus;
 import com.zebra.sdk.printer.SGD;
@@ -32,7 +29,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
@@ -57,12 +53,6 @@ public class ZPrinter
         this.channel = channel;
         this.result = result;
         this.printerConf = printerConf != null ? printerConf : new PrinterConf();
-    }
-
-    private TcpConnection newConnection(String address, int tcpPort){
-        int MAX_TIME_OUT_FOR_READ = 5000;
-        int TIME_TO_WAIT_FOR_MORE_DATA = 0;
-        return new TcpConnection(address, tcpPort, MAX_TIME_OUT_FOR_READ, TIME_TO_WAIT_FOR_MORE_DATA);
     }
 
     protected void init(Connection connection){
@@ -93,15 +83,11 @@ public class ZPrinter
         handler.post(() -> result.error(response.errorCode.name(), response.message, response.toMap()));
     }
 
-    public void doManualCalibrationOverTCPIP(final String address, final Integer port) {
+    public void doManualCalibration(final Connection connection) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -126,15 +112,11 @@ public class ZPrinter
         }).start();
     }
 
-    public void printConfigurationLabelOverTCPIP(final String address, final Integer port) {
+    public void printConfigurationLabel(final Connection connection) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -158,15 +140,11 @@ public class ZPrinter
         }).start();
     }
 
-    public void checkPrinterStatusOverTCPIP(final String address, final Integer port) {
+    public void checkPrinterStatus(final Connection connection) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -190,15 +168,11 @@ public class ZPrinter
         }).start();
     }
 
-    public void getPrinterSettingsOverTCPIP(final String address, final Integer port) {
+    public void getPrinterSettings(final Connection connection) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -222,17 +196,12 @@ public class ZPrinter
         }).start();
     }
 
-    public void setPrinterSettingsOverTCPIP(final String address, final Integer port, final PrinterSettings settings) {
+    public void setPrinterSettings(final Connection connection, final PrinterSettings settings) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
                 if(settings == null) throw new NullPointerException("Settings can't be null");
-
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -262,13 +231,13 @@ public class ZPrinter
     }
 
     /** @noinspection IOStreamConstructor*/
-    public void printPdfFileOverTCPIP(final String filePath, final String address, final Integer port) {
+    public void printPdfFile(final String filePath, final Connection connection) {
         new Thread(() -> {
             try
             {
                 if(!new File(filePath).exists()) throw new FileNotFoundException("The file: "+ filePath +"doesn't exist");
 
-                doPrintDataStreamOverTCPIP(new FileInputStream(filePath), address, port, false);
+                doPrintDataStream(new FileInputStream(filePath), connection, false);
             }
             catch(Exception e)
             {
@@ -278,16 +247,13 @@ public class ZPrinter
     }
 
     /** This function needs more tests as it relies on converting the PDF to image. */
-    public void printPdfAsImageOverTCPIP(final String filePath, final String address, final Integer port) {
+    public void printPdfAsImage(final String filePath, final Connection connection) {
         new Thread(() -> {
-            Connection connection;
             ZebraPrinter printer = null;
             try
             {
                 if(!new File(filePath).exists()) throw new FileNotFoundException("The file: "+ filePath +"doesn't exist");
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
 
-                connection = newConnection(address, tcpPort);
                 connection.open();
 
                 try {
@@ -326,13 +292,13 @@ public class ZPrinter
     }
 
     /** @noinspection IOStreamConstructor*/
-    public void printZplFileOverTCPIP(final String filePath, final String address, final Integer port) {
+    public void printZplFile(final String filePath, final Connection connection) {
         new Thread(() -> {
             try
             {
                 if(!new File(filePath).exists()) throw new FileNotFoundException("The file: "+ filePath +"doesn't exist");
 
-                doPrintDataStreamOverTCPIP(new FileInputStream(filePath), address, port, true);
+                doPrintDataStream(new FileInputStream(filePath), connection, true);
             }
             catch(Exception e)
             {
@@ -342,22 +308,18 @@ public class ZPrinter
     }
 
     /** @noinspection CharsetObjectCanBeUsed*/
-    public void printZplDataOverTCPIP(final String data, final String address, final Integer port) {
+    public void printZplData(final String data, final Connection connection) {
         if(data == null || data.isEmpty()) throw new NullPointerException("ZPL data can not be empty");
-        new Thread(() -> doPrintDataStreamOverTCPIP(
-            new ByteArrayInputStream(data.getBytes(Charset.forName("UTF-8"))), address, port, true))
+        new Thread(() -> doPrintDataStream(
+            new ByteArrayInputStream(data.getBytes(Charset.forName("UTF-8"))), connection, true))
             .start();
     }
 
-    private void doPrintDataStreamOverTCPIP(final InputStream dataStream, final String address, final Integer port, boolean isZPL) {
-        Connection connection;
+    private void doPrintDataStream(final InputStream dataStream, final Connection connection, boolean isZPL) {
         ZebraPrinter printer = null;
         try
         {
             if(dataStream == null) throw new NullPointerException("Data stream can not be empty");
-            int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-
-            connection = newConnection(address, tcpPort);
             connection.open();
 
             try {
@@ -473,11 +435,10 @@ public class ZPrinter
             Log.e("paramSetting", key+"--->"+allSettings.get(key));
     }
 
-    public void rebootPrinter(final String address, final Integer port) {
+    public void rebootPrinter(final Connection connection) {
         new Thread(() -> {
             try {
-                int tcpPort = port != null ? port : TcpConnection.DEFAULT_ZPL_TCP_PORT;
-                if(PrinterUtils.reboot(newConnection(address, tcpPort))) {
+                if(PrinterUtils.reboot(connection)) {
                     onPrinterRebooted("Printer successfully rebooted");
                 } else {
                     PrinterResponse response = new PrinterResponse(ErrorCode.EXCEPTION,
@@ -540,7 +501,7 @@ public class ZPrinter
         return scale;
     }
 
-    protected void findPrintersOverBluetooth(final Context context, final MethodChannel methodChannel) {
+    public void findPrintersOverBluetooth(final Context context) {
 
         Thread findPrinters = new Thread(() -> {
             try {
