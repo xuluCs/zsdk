@@ -13,7 +13,6 @@ import com.zebra.sdk.printer.SGD;
 import com.zebra.sdk.printer.ZebraPrinter;
 import com.zebra.sdk.printer.ZebraPrinterFactory;
 import com.zebra.sdk.printer.ZebraPrinterLinkOs;
-import com.zebra.sdk.printer.discovery.BluetoothDiscoverer;
 import com.zebra.sdk.printer.discovery.DiscoveredPrinter;
 import com.zebra.sdk.printer.discovery.DiscoveryHandler;
 import com.zebra.sdk.util.internal.FileUtilities;
@@ -501,7 +500,7 @@ public class ZPrinter
         return scale;
     }
 
-    public void findPrintersOverBluetooth(final Context context) {
+    public void findPrintersOverBluetooth() {
 
         Thread findPrinters = new Thread(() -> {
             try {
@@ -516,27 +515,6 @@ public class ZPrinter
                     @Override
                     public void discoveryFinished() {
                         System.out.println("BluetoothLeDiscoverer: discovery finished");
-                        handler.post(() -> result.success(null));
-                    }
-
-                    @Override
-                    public void discoveryError(String s) {
-                        PrinterResponse response = new PrinterResponse(ErrorCode.PRINTER_ERROR, null, s);
-                        handler.post(() -> result.error(ErrorCode.PRINTER_ERROR.toString(), s, response.toMap()));
-                    }
-                });
-
-                System.out.println("BluetoothDiscoverer: started");
-                BluetoothDiscoverer.findPrinters(context, new DiscoveryHandler() {
-                    @Override
-                    public void foundPrinter(DiscoveredPrinter discoveredPrinter) {
-                        System.out.println("BluetoothDiscoverer: Found printer " + discoveredPrinter.address);
-                        handler.post(() -> bluetoothPrinterFound(discoveredPrinter, false));
-                    }
-
-                    @Override
-                    public void discoveryFinished() {
-                        System.out.println("BluetoothDiscoverer: discovery finished");
                         handler.post(() -> result.success(null));
                     }
 

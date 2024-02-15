@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:zsdk/zsdk.dart' as Printer;
 import 'dart:io';
 
+import 'package:zsdk_example/discover_printers.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MaterialApp(
+  runApp(const MaterialApp(
     home: MyApp(),
   ));
 }
@@ -24,7 +25,7 @@ const String btnPrintConfigurationLabel = 'btnPrintConfigurationLabel';
 const String btnRebootPrinter = 'btnRebootPrinter';
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   State createState() => _MyAppState();
@@ -89,7 +90,6 @@ class _MyAppState extends State<MyApp> {
   ConnectionType connectionType = ConnectionType.TCP_IP;
   List<Printer.BluetoothConnectionData> printers = [];
   Printer.BluetoothConnectionData? selectedPrinter;
-  bool searchingForBluetoothPrinters = false;
 
   @override
   void initState() {
@@ -276,25 +276,16 @@ class _MyAppState extends State<MyApp> {
                       DropdownMenu<ConnectionType>(
                         initialSelection: connectionType,
                         onSelected: (ConnectionType? value) async {
-                          if(value == ConnectionType.BLUETOOTH){
-                            PermissionStatus permissionRequestResult = await Permission.bluetooth.request();
-                            PermissionStatus permissionScanRequestResult = await Permission.bluetoothScan.request();
-                            PermissionStatus permissionConnectRequestResult = await Permission.bluetoothConnect.request();
+                          if (value == ConnectionType.BLUETOOTH) {
+                            Printer.BluetoothConnectionData? printer =
+                                await Navigator.push<
+                                        Printer.BluetoothConnectionData?>(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            DiscoverPrinters()));
 
-                            if(permissionRequestResult != PermissionStatus.granted || permissionScanRequestResult != PermissionStatus.granted || permissionConnectRequestResult != PermissionStatus.granted){
-                              showSnackBar("Bluetooth permission is necessary to use bluetooth printers");
-                              return;
-                            }
                             setState(() {
-                              searchingForBluetoothPrinters = true;
-                            });
-                            zsdk.findPrintersOverBluetooth();
-                            Printer.BluetoothConnectionData printer = await showDialog(
-                              context: context,
-                              builder: bluetoothPrinterSelectionPopup,
-                            );
-                            setState(() {
-                              searchingForBluetoothPrinters = false;
                               selectedPrinter = printer;
                               connectionType = value!;
                             });
@@ -306,8 +297,11 @@ class _MyAppState extends State<MyApp> {
                             connectionType = value!;
                           });
                         },
-                        dropdownMenuEntries: ConnectionType.values.map<DropdownMenuEntry<ConnectionType>>((ConnectionType value) {
-                          return DropdownMenuEntry<ConnectionType>(value: value, label: value.name);
+                        dropdownMenuEntries: ConnectionType.values
+                            .map<DropdownMenuEntry<ConnectionType>>(
+                                (ConnectionType value) {
+                          return DropdownMenuEntry<ConnectionType>(
+                              value: value, label: value.name);
                         }).toList(),
                       ),
                       Visibility(
@@ -1011,11 +1005,7 @@ class _MyAppState extends State<MyApp> {
             calibrationMessage = "Starting manual callibration...";
             calibrationStatus = OperationStatus.SENDING;
           });
-          zsdk.doManualCalibrationOverTCPIP(
-            address: addressIpController.text,
-            port: int.tryParse(addressPortController.text),
-          )
-              .then((value) {
+          _doManualCalibration().then((value) {
             setState(() {
               calibrationStatus = OperationStatus.SUCCESS;
               calibrationMessage = "$value";
@@ -1049,12 +1039,7 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Getting printer settings...";
             settingsStatus = OperationStatus.RECEIVING;
           });
-          zsdk
-              .getPrinterSettingsOverTCPIP(
-            address: addressIpController.text,
-            port: int.tryParse(addressPortController.text),
-          )
-              .then((value) {
+          _getPrinterSettings().then((value) {
             setState(() {
               settingsStatus = OperationStatus.SUCCESS;
               settingsMessage = "$value";
@@ -1089,67 +1074,8 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Setting printer settings...";
             settingsStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .setPrinterSettingsOverTCPIP(
-                  address: addressIpController.text,
-                  port: int.tryParse(addressPortController.text),
-                  settings: Printer.PrinterSettings(
-                    darkness: double.tryParse(darknessController.text),
-                    printSpeed: double.tryParse(printSpeedController.text),
-                    tearOff: int.tryParse(tearOffController.text),
-                    mediaType: selectedMediaType,
-                    printMethod: selectedPrintMethod,
-                    printWidth: int.tryParse(printWidthController.text),
-                    labelLength: int.tryParse(labelLengthController.text),
-                    labelLengthMax:
-                        double.tryParse(labelLengthMaxController.text),
-                    zplMode: selectedZPLMode,
-                    powerUpAction: selectedPowerUpAction,
-                    headCloseAction: selectedHeadCloseAction,
-                    labelTop: int.tryParse(labelTopController.text),
-                    leftPosition: int.tryParse(leftPositionController.text),
-                    printMode: selectedPrintMode,
-                    reprintMode: selectedReprintMode,
-                    virtualDevice: selectedVirtualDevice,
-                  )
-//            settings: Printer.PrinterSettings(
-//              darkness: 10, //10
-//              printSpeed: 6, //6
-//              tearOff: 0,//0
-//              mediaType: Printer.MediaType.MARK, //MARK
-//              printMethod: Printer.PrintMethod.DIRECT_THERMAL, //DIRECT_THERMAL
-//              printWidth: 568,//600
-//              labelLength: 1202,//1202
-//              labelLengthMax: 39,//39
-//              zplMode: Printer.ZPLMode.ZPL_II,//ZPL II
-//              powerUpAction: Printer.PowerUpAction.NO_MOTION,//NO MOTION
-//              headCloseAction: Printer.HeadCloseAction.FEED,//FEED
-//              labelTop: 0,//0
-//              leftPosition: 0,//0
-//              printMode: Printer.PrintMode.TEAR_OFF,//TEAR_OFF
-//              reprintMode: Printer.ReprintMode.OFF,//OFF
-//              virtualDevice: selectedVirtualDevice,
-//            )
-//            settings: Printer.PrinterSettings(
-//              darkness: 30, //10
-//              printSpeed: 3, //6
-//              tearOff: 100,//0
-//              mediaType: Printer.MediaType.CONTINUOUS, //MARK
-//              printMethod: Printer.PrintMethod.THERMAL_TRANS, //DIRECT_THERMAL
-//              printWidth: 568,//600
-//              labelLength: 1000,//1202
-//              labelLengthMax: 30,//39
-//              zplMode: Printer.ZPLMode.ZPL,//ZPL II
-//              powerUpAction: Printer.PowerUpAction.FEED,//NO MOTION
-//              headCloseAction: Printer.HeadCloseAction.NO_MOTION,//FEED
-//              labelTop: 50,//0
-//              leftPosition: 100,//0
-//              printMode: Printer.PrintMode.CUTTER,//TEAR_OFF
-//              reprintMode: Printer.ReprintMode.ON,//OFF
-//              virtualDevice: selectedVirtualDevice,
-//            )
-                  )
-              .then((value) {
+
+          _setPrinterSettings().then((value) {
             setState(() {
               settingsStatus = OperationStatus.SUCCESS;
               settingsMessage = "$value";
@@ -1184,12 +1110,7 @@ class _MyAppState extends State<MyApp> {
             settingsMessage = "Setting default settings...";
             settingsStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .setPrinterSettingsOverTCPIP(
-                  address: addressIpController.text,
-                  port: int.tryParse(addressPortController.text),
-                  settings: Printer.PrinterSettings.defaultSettings())
-              .then((value) {
+          _resetPrinterSettings().then((value) {
             setState(() {
               settingsStatus = OperationStatus.SUCCESS;
               settingsMessage = "$value";
@@ -1224,12 +1145,7 @@ class _MyAppState extends State<MyApp> {
             statusMessage = "Checking printer status...";
             checkingStatus = OperationStatus.RECEIVING;
           });
-          zsdk
-              .checkPrinterStatusOverTCPIP(
-            address: addressIpController.text,
-            port: int.tryParse(addressPortController.text),
-          )
-              .then((value) {
+          _checkPrinterStatus().then((value) {
             setState(() {
               checkingStatus = OperationStatus.SUCCESS;
               Printer.PrinterResponse? printerResponse;
@@ -1267,12 +1183,7 @@ class _MyAppState extends State<MyApp> {
             statusMessage = "Rebooting printer...";
             rebootingStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .rebootPrinterOverTCPIP(
-            address: addressIpController.text,
-            port: int.tryParse(addressPortController.text),
-          )
-              .then((value) {
+          _rebootPrinter().then((value) {
             setState(() {
               rebootingStatus = OperationStatus.SUCCESS;
               Printer.PrinterResponse? printerResponse;
@@ -1310,12 +1221,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .printConfigurationLabelOverTCPIP(
-            address: addressIpController.text,
-            port: int.tryParse(addressPortController.text),
-          )
-              .then((value) {
+          _printConfigurationLabel().then((value) {
             setState(() {
               printStatus = OperationStatus.SUCCESS;
               message = "$value";
@@ -1352,18 +1258,8 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .printPdfFileOverTCPIP(
-                  filePath: pathController.text,
-                  address: addressIpController.text,
-                  port: int.tryParse(addressPortController.text),
-                  printerConf: Printer.PrinterConf(
-                    cmWidth: double.tryParse(widthController.text),
-                    cmHeight: double.tryParse(heightController.text),
-                    dpi: double.tryParse(dpiController.text),
-                    orientation: printerOrientation,
-                  ))
-              .then((value) {
+
+          _printPdfFile().then((value) {
             setState(() {
               printStatus = OperationStatus.SUCCESS;
               message = "$value";
@@ -1408,18 +1304,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .printZplDataOverTCPIP(
-                  data: zplData!,
-                  address: addressIpController.text,
-                  port: int.tryParse(addressPortController.text),
-                  printerConf: Printer.PrinterConf(
-                    cmWidth: double.tryParse(widthController.text),
-                    cmHeight: double.tryParse(heightController.text),
-                    dpi: double.tryParse(dpiController.text),
-                    orientation: printerOrientation,
-                  ))
-              .then((value) {
+          _printZplData().then((value) {
             setState(() {
               printStatus = OperationStatus.SUCCESS;
               message = "$value";
@@ -1456,18 +1341,7 @@ class _MyAppState extends State<MyApp> {
             message = "Print job started...";
             printStatus = OperationStatus.SENDING;
           });
-          zsdk
-              .printZplDataOverTCPIP(
-                  data: zplData!,
-                  address: addressIpController.text,
-                  port: int.tryParse(addressPortController.text),
-                  printerConf: Printer.PrinterConf(
-                    cmWidth: double.tryParse(widthController.text),
-                    cmHeight: double.tryParse(heightController.text),
-                    dpi: double.tryParse(dpiController.text),
-                    orientation: printerOrientation,
-                  ))
-              .then((value) {
+          _printZplData().then((value) {
             setState(() {
               printStatus = OperationStatus.SUCCESS;
               message = "$value";
@@ -1507,49 +1381,171 @@ class _MyAppState extends State<MyApp> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  AlertDialog bluetoothPrinterSelectionPopup(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        "Printers list",
-        style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 20,
-            fontWeight: FontWeight.bold
-        ),
-      ),
-      content: Container(
-        height: double.maxFinite,
-        width: double.maxFinite,
-        child: Column(
-          children: <Widget>[
-            Visibility(visible: searchingForBluetoothPrinters, child: const CircularProgressIndicator()),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(10),
-                itemCount: printers.length,
-                itemBuilder: (context, index) {
-                  final printer = printers[index];
-                  return ListTile(
-                    title: Text(printer.friendlyName),
-                    subtitle: Text(printer.macAddress),
-                    onTap: () {
-                      Navigator.of(context).pop(printer);
-                    },
-                  );
-                },
-              )
-            ),
-          ],
-        )
-      ),
-      actions: <Widget>[
-        TextButton(
-          child: Text('Cancel'),
-          onPressed: () {
-            Navigator.of(context).pop(null);
-          },
-        ),
-      ],
+  Future _printPdfFile() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.printPdfFileOverTCPIP(
+          filePath: pathController.text,
+          address: addressIpController.text,
+          port: int.tryParse(addressPortController.text),
+          printerConf: Printer.PrinterConf(
+            cmWidth: double.tryParse(widthController.text),
+            cmHeight: double.tryParse(heightController.text),
+            dpi: double.tryParse(dpiController.text),
+            orientation: printerOrientation,
+          ));
+    }
+    return zsdk.printPdfFileOverBluetooth(
+        filePath: pathController.text,
+        address: selectedPrinter!.macAddress,
+        printerConf: Printer.PrinterConf(
+          cmWidth: double.tryParse(widthController.text),
+          cmHeight: double.tryParse(heightController.text),
+          dpi: double.tryParse(dpiController.text),
+          orientation: printerOrientation,
+        ));
+  }
+
+  Future _printZplData() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.printZplDataOverTCPIP(
+          data: zplData!,
+          address: addressIpController.text,
+          port: int.tryParse(addressPortController.text),
+          printerConf: Printer.PrinterConf(
+            cmWidth: double.tryParse(widthController.text),
+            cmHeight: double.tryParse(heightController.text),
+            dpi: double.tryParse(dpiController.text),
+            orientation: printerOrientation,
+          ));
+    }
+
+    return zsdk.printZplDataOverBluetooth(
+        data: zplData!,
+        address: selectedPrinter!.macAddress,
+        printerConf: Printer.PrinterConf(
+          cmWidth: double.tryParse(widthController.text),
+          cmHeight: double.tryParse(heightController.text),
+          dpi: double.tryParse(dpiController.text),
+          orientation: printerOrientation,
+        ));
+  }
+
+  Future _checkPrinterStatus() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.checkPrinterStatusOverTCPIP(
+        address: addressIpController.text,
+        port: int.tryParse(addressPortController.text),
+      );
+    }
+
+    return zsdk.checkPrinterStatusOverBluetooth(
+      address: selectedPrinter!.macAddress,
+    );
+  }
+
+  Future _getPrinterSettings() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.getPrinterSettingsOverTCPIP(
+        address: addressIpController.text,
+        port: int.tryParse(addressPortController.text),
+      );
+    }
+    return zsdk.getPrinterSettingsOverBluetooth(
+      address: selectedPrinter!.macAddress,
+    );
+  }
+
+  Future _setPrinterSettings() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.setPrinterSettingsOverTCPIP(
+          address: addressIpController.text,
+          port: int.tryParse(addressPortController.text),
+          settings: Printer.PrinterSettings(
+            darkness: double.tryParse(darknessController.text),
+            printSpeed: double.tryParse(printSpeedController.text),
+            tearOff: int.tryParse(tearOffController.text),
+            mediaType: selectedMediaType,
+            printMethod: selectedPrintMethod,
+            printWidth: int.tryParse(printWidthController.text),
+            labelLength: int.tryParse(labelLengthController.text),
+            labelLengthMax: double.tryParse(labelLengthMaxController.text),
+            zplMode: selectedZPLMode,
+            powerUpAction: selectedPowerUpAction,
+            headCloseAction: selectedHeadCloseAction,
+            labelTop: int.tryParse(labelTopController.text),
+            leftPosition: int.tryParse(leftPositionController.text),
+            printMode: selectedPrintMode,
+            reprintMode: selectedReprintMode,
+            virtualDevice: selectedVirtualDevice,
+          ));
+    }
+    return zsdk.setPrinterSettingsOverBluetooth(
+        address: selectedPrinter!.macAddress,
+        settings: Printer.PrinterSettings(
+          darkness: double.tryParse(darknessController.text),
+          printSpeed: double.tryParse(printSpeedController.text),
+          tearOff: int.tryParse(tearOffController.text),
+          mediaType: selectedMediaType,
+          printMethod: selectedPrintMethod,
+          printWidth: int.tryParse(printWidthController.text),
+          labelLength: int.tryParse(labelLengthController.text),
+          labelLengthMax: double.tryParse(labelLengthMaxController.text),
+          zplMode: selectedZPLMode,
+          powerUpAction: selectedPowerUpAction,
+          headCloseAction: selectedHeadCloseAction,
+          labelTop: int.tryParse(labelTopController.text),
+          leftPosition: int.tryParse(leftPositionController.text),
+          printMode: selectedPrintMode,
+          reprintMode: selectedReprintMode,
+          virtualDevice: selectedVirtualDevice,
+        ));
+  }
+
+  Future _resetPrinterSettings() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.setPrinterSettingsOverTCPIP(
+          address: addressIpController.text,
+          port: int.tryParse(addressPortController.text),
+          settings: Printer.PrinterSettings.defaultSettings());
+    }
+    return zsdk.setPrinterSettingsOverBluetooth(
+        address: selectedPrinter!.macAddress,
+        settings: Printer.PrinterSettings.defaultSettings());
+  }
+
+  Future _doManualCalibration() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.doManualCalibrationOverTCPIP(
+        address: addressIpController.text,
+        port: int.tryParse(addressPortController.text),
+      );
+    }
+    return zsdk.doManualCalibrationOverBluetooth(
+      address: selectedPrinter!.macAddress,
+    );
+  }
+
+  Future _printConfigurationLabel() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.printConfigurationLabelOverTCPIP(
+        address: addressIpController.text,
+        port: int.tryParse(addressPortController.text),
+      );
+    }
+    return zsdk.printConfigurationLabelOverBluetooth(
+      address: selectedPrinter!.macAddress,
+    );
+  }
+
+  Future _rebootPrinter() {
+    if (connectionType == ConnectionType.TCP_IP) {
+      return zsdk.rebootPrinterOverTCPIP(
+        address: addressIpController.text,
+        port: int.tryParse(addressPortController.text),
+      );
+    }
+    return zsdk.rebootPrinterOverBluetooth(
+      address: selectedPrinter!.macAddress,
     );
   }
 }

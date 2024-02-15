@@ -17,7 +17,8 @@
     -->
     <application
         android:icon="@mipmap/ic_launcher"
-        android:label="zsdk_example">
+        android:label="zsdk_example"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density"

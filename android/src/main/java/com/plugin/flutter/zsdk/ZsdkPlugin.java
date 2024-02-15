@@ -207,9 +207,7 @@ public class ZsdkPlugin implements FlutterPlugin, MethodCallHandler {
                   );
                   break;
               case _FIND_PRINTERS_OVER_BLUETOOTH:
-                  printer.findPrintersOverBluetooth(
-                      context
-                  );
+                  printer.findPrintersOverBluetooth();
                   break;
               case _PRINT_PDF_DATA_OVER_TCP_IP:
               default:

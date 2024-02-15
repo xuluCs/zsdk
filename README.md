@@ -66,6 +66,10 @@ and run `flutter pub get` to download the library sources to your pub-cache.
 ### Initialize a ZSDK object
 ```dart
 final zsdk = ZSDK();
+// or if you'd like to use the bluetooth printing
+final zsdk = ZSDK(onBluetoothPrinterFound: (BluetoothConnectionData printer) {
+  // Do something here when a printer is found
+});
 ```
 
 ### Start the printer calibration
@@ -231,6 +235,11 @@ zsdk.printPdfFileOverTCPIP(
  }
 ```
 
+### search for bluetooth printers
+```dart
+zsdk.findPrintersOverBluetooth()
+//use the onBluetoothPrinterFound callback to collect the found printers
+```
 
 *Check the example code for more details*
 
@@ -239,3 +248,4 @@ zsdk.printPdfFileOverTCPIP(
 - Zebra ZD500 Series
 - ZD620
 - ZQ620
+- Zebra ZD421
