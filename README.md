@@ -1,8 +1,5 @@
 # zsdk
 
-## What is this fork for?
-The porpoise is to add bluetooth printing to the already available TCP/IP printing.
-
 ### Zebra Link OS SDK Flutter plugin.
 This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://www.zebra.com/ap/en/support-downloads/printer-software/link-os-multiplatform-sdk.html)
 
@@ -19,16 +16,17 @@ This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://w
 | Print configuration label over TCP/IP    | :white_check_mark:      | :white_check_mark:      |
 | Run calibration over TCP/IP              | :white_check_mark:      | :white_check_mark:      |
 | Reboot printer over TCP/IP               | :white_check_mark:      | :white_check_mark:      |
-| Print ZPL from String over Bluetooth     |                         |                         |
-| Print ZPL from file over Bluetooth       |                         |                         |
-| Print PDF from byte array over Bluetooth |                         |                         |
-| Print PDF from file over Bluetooth       |                         |                         |
-| Get printer settings over Bluetooth      |                         |                         |
-| Set printer settings over Bluetooth      |                         |                         |
-| Check printer status over Bluetooth      |                         |                         |
-| Print configuration label over Bluetooth |                         |                         |
-| Run calibration over Bluetooth           |                         |                         |
-| Reboot printer over Bluetooth            |                         |                         |
+| Print ZPL from String over Bluetooth     | :ballot_box_with_check: | :white_check_mark:      |
+| Print ZPL from file over Bluetooth       | :ballot_box_with_check: | :white_check_mark:      |
+| Print PDF from byte array over Bluetooth | :ballot_box_with_check: | :ballot_box_with_check: |
+| Print PDF from file over Bluetooth       | :ballot_box_with_check: | :white_check_mark:      |
+| Get printer settings over Bluetooth      | :ballot_box_with_check: | :white_check_mark:      |
+| Set printer settings over Bluetooth      | :ballot_box_with_check: | :white_check_mark:      |
+| Check printer status over Bluetooth      | :ballot_box_with_check: | :white_check_mark:      |
+| Print configuration label over Bluetooth | :ballot_box_with_check: | :white_check_mark:      |
+| Run calibration over Bluetooth           | :ballot_box_with_check: | :white_check_mark:      |
+| Reboot printer over Bluetooth            | :ballot_box_with_check: | :white_check_mark:      |
+| Find printers over Bluetooth             | :ballot_box_with_check: | :white_check_mark:      |
 
 
 ### Note:
