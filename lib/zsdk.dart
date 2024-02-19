@@ -52,6 +52,7 @@ class ZSDK {
       "doManualCalibrationOverTCPIP";
   static const String _PRINT_CONFIGURATION_LABEL_OVER_TCP_IP =
       "printConfigurationLabelOverTCPIP";
+  static const String _FIND_PRINTERS_OVER_TCP_IP = "findPrintersOverTCPIP";
   static const String _FIND_PRINTERS_OVER_BLUETOOTH = "findPrintersOverBluetooth";
   static const String _REBOOT_PRINTER_OVER_TCP_IP = "rebootPrinterOverBluetooth";
   static const String _PRINT_PDF_FILE_OVER_BLUETOOTH = "printPdfFileOverBluetooth";
@@ -81,17 +82,17 @@ class ZSDK {
   static const String _dpi = "dpi";
 
   late MethodChannel _channel;
-  void Function(BluetoothConnectionData)? onBluetoothPrinterFound;
+  void Function(PrinterConnectionData)? printerFound;
 
-  ZSDK({this.onBluetoothPrinterFound}) {
+  ZSDK({this.printerFound}) {
     _channel = const MethodChannel(_METHOD_CHANNEL);
     _channel.setMethodCallHandler(_onMethodCall);
   }
 
   Future<void> _onMethodCall(MethodCall call) async {
     switch (call.method) {
-      case "bluetoothPrinterFound":
-        handleBluetoothPrinterFound(call);
+      case "printerFound":
+        handlePrinterFound(call);
         break;
       default:
         print(call.arguments);
@@ -229,12 +230,12 @@ class ZSDK {
           onTimeout: () => _onTimeout(timeout: timeout));
 
   Future printPdfDataOverTCPIP(
-          {required ByteData data,
+          {required Uint8List data,
           required String address,
           int? port,
           PrinterConf? printerConf,
           Duration? timeout}) =>
-      _printDataOverTCPIP(
+      _printPdfDataOverTCPIP(
           method: _PRINT_PDF_DATA_OVER_TCP_IP,
           data: data,
           address: address,
@@ -248,7 +249,7 @@ class ZSDK {
           int? port,
           PrinterConf? printerConf,
           Duration? timeout}) =>
-      _printDataOverTCPIP(
+      _printPdfDataOverTCPIP(
           method: _PRINT_ZPL_DATA_OVER_TCP_IP,
           data: data,
           address: address,
@@ -256,7 +257,7 @@ class ZSDK {
           printerConf: printerConf,
           timeout: timeout);
 
-  Future _printDataOverTCPIP(
+  Future _printPdfDataOverTCPIP(
           {required method,
           required dynamic data,
           required String address,
@@ -276,6 +277,8 @@ class ZSDK {
           onTimeout: () => _onTimeout(timeout: timeout));
 
   Future findPrintersOverBluetooth() => _channel.invokeMethod(_FIND_PRINTERS_OVER_BLUETOOTH);
+
+  Future findPrintersOverTCPIP() => _channel.invokeMethod(_FIND_PRINTERS_OVER_TCP_IP);
 
   Future doManualCalibrationOverBluetooth(
           {required String address, Duration? timeout}) =>
@@ -380,11 +383,11 @@ class ZSDK {
           onTimeout: () => _onTimeout(timeout: timeout));
 
   Future printPdfDataOverBluetooth(
-          {required ByteData data,
+          {required Uint8List data,
           required String address,
           PrinterConf? printerConf,
           Duration? timeout}) =>
-      _printDataOverBluetooth(
+      _printPdfDataOverBluetooth(
           method: _PRINT_PDF_DATA_OVER_BLUETOOTH,
           data: data,
           address: address,
@@ -396,14 +399,14 @@ class ZSDK {
           required String address,
           PrinterConf? printerConf,
           Duration? timeout}) =>
-      _printDataOverBluetooth(
+      _printPdfDataOverBluetooth(
           method: _PRINT_ZPL_DATA_OVER_BLUETOOTH,
           data: data,
           address: address,
           printerConf: printerConf,
           timeout: timeout);
 
-  Future _printDataOverBluetooth(
+  Future _printPdfDataOverBluetooth(
           {required method,
           required dynamic data,
           required String address,
@@ -420,7 +423,7 @@ class ZSDK {
           timeout ??= const Duration(seconds: DEFAULT_CONNECTION_TIMEOUT),
           onTimeout: () => _onTimeout(timeout: timeout));
 
-  void handleBluetoothPrinterFound(MethodCall call) {
-    onBluetoothPrinterFound!(BluetoothConnectionData.fromJson(call.arguments as String));
+  void handlePrinterFound(MethodCall call) {
+    printerFound!(PrinterConnectionData.fromJson(call.arguments as String));
   }
 }
