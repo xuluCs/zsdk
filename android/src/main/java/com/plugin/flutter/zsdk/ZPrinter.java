@@ -62,9 +62,14 @@ public class ZPrinter
 
     private void onConnectionTimeOut(ConnectionException e){
         if(e != null) e.printStackTrace();
-        PrinterResponse response = new PrinterResponse(ErrorCode.EXCEPTION,
-                new StatusInfo(Status.UNKNOWN, Cause.NO_CONNECTION), "Connection timeout. "+e);
-        handler.post(() -> result.error(response.errorCode.name(), response.message, response.toMap()));
+        PrinterResponse response = new PrinterResponse(
+                ErrorCode.EXCEPTION,
+                new StatusInfo(Status.UNKNOWN, Cause.NO_CONNECTION),
+                e != null ? e.getMessage() : "Connection timeout"
+        );
+        handler.post(
+                () -> result.error(response.errorCode.name(), response.message, response.toMap())
+        );
     }
 
     /** @noinspection SameParameterValue*/
