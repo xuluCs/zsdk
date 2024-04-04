@@ -1,9 +1,11 @@
 # zsdk
 
-### Zebra Link OS SDK Flutter plugin.
+## Zebra Link OS SDK Flutter plugin
+
 This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://www.zebra.com/ap/en/support-downloads/printer-software/link-os-multiplatform-sdk.html)
 
 ### Features
+
 | Feature                                  | iOS                     | Android                 |
 |------------------------------------------|-------------------------|-------------------------|
 | Print ZPL from String over TCP/IP        | :white_check_mark:      | :white_check_mark:      |
@@ -28,18 +30,20 @@ This is a flutter plugin for the Link-OS Multiplatform SDK for [Zebra](https://w
 | Reboot printer over Bluetooth            | :ballot_box_with_check: | :white_check_mark:      |
 | Find printers over Bluetooth             | :ballot_box_with_check: | :white_check_mark:      |
 
+### Note
 
-### Note:
 Since v3.1.0+1 the plugin supports PDF direct printing on both iOS and Android, before this version, the PDF printing was only available on Android, and it was by using some kind of workaround converting the PDF to image and printing it as image, which was not reliable and caused some issues depending on the document dimensions, etc.
 Now the [PDF Direct printing](https://supportcommunity.zebra.com/s/article/Printing-PDF-files-using-the-PDF-direct-virtual-device?language=en_US) is the right way and according to the manufacturer, you just need to be sure your printing OS is >= **Link-OS v6.3** and you have installed the **Virtual Device for PDF Direct**.
 
 Steps:
+
 1. [Upgrade Zebra Printer Firmware](https://supportcommunity.zebra.com/s/article/Zebra-Printer-Firmware-Upgrade-Information?language=en_US)
 2. [Install and Enable Virtual Device for PDF Direct](https://supportcommunity.zebra.com/s/article/PDF-Direct-Activation?language=en_US)
 
 ------------------------
 
 ### iOS Setup
+
 ```yaml
 target 'Runner' do
   use_frameworks!
@@ -48,20 +52,24 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 ```
- 
+
 ### Android Setup
+
 No setup required
 
 ## How to use
 
 ### Add dependency
+
 ```yaml
 # Add this line to your flutter project dependencies
 zsdk: ^2.0.0+11
 ```
+
 and run `flutter pub get` to download the library sources to your pub-cache.
 
 ### Initialize a ZSDK object
+
 ```dart
 final zsdk = ZSDK();
 // or if you'd like to use the bluetooth printing
@@ -71,6 +79,7 @@ final zsdk = ZSDK(printerFound: (PrinterConnectionData printer) {
 ```
 
 ### Start the printer calibration
+
 ```dart
 zsdk.doManualCalibrationOverTCPIP(
   address: '10.0.0.100', 
@@ -79,6 +88,7 @@ zsdk.doManualCalibrationOverTCPIP(
 ```
 
 ### Get printer settings
+
 ```dart
 zsdk.getPrinterSettingsOverTCPIP(
   address: '10.0.0.100', 
@@ -89,6 +99,7 @@ zsdk.getPrinterSettingsOverTCPIP(
 ```
 
 ### Set printer settings
+
 ```dart
 zsdk.setPrinterSettingsOverTCPIP(
   address: '10.0.0.100', 
@@ -123,6 +134,7 @@ zsdk.setPrinterSettingsOverTCPIP(
 ```
 
 ### Reset printer settings
+
 ```dart
 zsdk.setPrinterSettingsOverTCPIP(
   address: '10.0.0.100', 
@@ -141,6 +153,7 @@ zsdk.setPrinterSettingsOverTCPIP(
 ```
 
 ### Check printer status
+
 ```dart
 zsdk.checkPrinterStatusOverTCPIP(
   address: '10.0.0.100', 
@@ -159,6 +172,7 @@ zsdk.checkPrinterStatusOverTCPIP(
 ```
 
 ### Reboot printer
+
 ```dart
 zsdk.rebootPrinter(
   address: '10.0.0.100', 
@@ -177,6 +191,7 @@ zsdk.rebootPrinter(
 ```
 
 ### Print zpl file
+
 ```dart
 zsdk.printZplFileOverTCPIP(
   filePath: '/path/to/file.pdf',
@@ -196,6 +211,7 @@ zsdk.printZplFileOverTCPIP(
 ```
 
 ### Print zpl data
+
 ```dart
 zsdk.printZplDataOverTCPIP(
   data: '^XA^FO17,16^GB379,371,8^FS^FT65,255^A0N,135,134^FDTEST^FS^XZ',
@@ -215,6 +231,7 @@ zsdk.printZplDataOverTCPIP(
 ```
 
 ### Print pdf file
+
 ```dart
 zsdk.printPdfFileOverTCPIP(
   filePath: '/path/to/file.pdf',
@@ -234,6 +251,7 @@ zsdk.printPdfFileOverTCPIP(
 ```
 
 ### search for bluetooth printers
+
 ```dart
 zsdk.findPrintersOverBluetooth()
 //use the printerFound callback to collect the found printers
@@ -242,7 +260,8 @@ zsdk.findPrintersOverBluetooth()
 *Check the example code for more details*
 
 ### Tested Zebra Devices
-- Zebra ZT411 
+
+- Zebra ZT411
 - Zebra ZD500 Series
 - ZD620
 - ZQ620

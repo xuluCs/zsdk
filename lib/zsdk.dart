@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:zsdk/src/bluetooth_connection_data.dart';
+import 'package:zsdk/src/printer_connection_data.dart';
 import 'package:zsdk/src/enumerators/cause.dart';
 import 'package:zsdk/src/enumerators/error_code.dart';
 import 'package:zsdk/src/enumerators/orientation.dart';
@@ -26,7 +26,7 @@ export 'package:zsdk/src/enumerators/virtual_device.dart';
 export 'package:zsdk/src/enumerators/status.dart';
 export 'package:zsdk/src/status_info.dart';
 export 'package:zsdk/src/enumerators/zpl_mode.dart';
-export 'package:zsdk/src/bluetooth_connection_data.dart';
+export 'package:zsdk/src/printer_connection_data.dart';
 
 class ZSDK {
   static const int DEFAULT_ZPL_TCP_PORT = 9100;

@@ -589,6 +589,7 @@ public class ZPrinter
             args.put("friendlyName", printer.getDiscoveryDataMap().get("FRIENDLY_NAME"));
         } else {
             args.put("friendlyName", printer.getDiscoveryDataMap().get("SYSTEM_NAME"));
+            args.put("productName", printer.getDiscoveryDataMap().get("PRODUCT_NAME"));
         }
         args.put("type", isBluetooth ? "bluetooth" : "network");
 
